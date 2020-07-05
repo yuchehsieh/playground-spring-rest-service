@@ -9,6 +9,7 @@ import javax.annotation.PostConstruct;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -72,6 +73,42 @@ public class ProductController {
     public Product replaceProduct(@PathVariable("id") String id,
                                   @RequestBody Product request) {
         return null;
+    }
+
+    /**
+     * 每個值都要給
+     * 而且不能改變順序
+     * **/
+    @GetMapping("/products")
+    public ResponseEntity<String> getProducts(@ModelAttribute ProductQueryParameter param) {
+        String nameKeyword = param.getKeyword();
+        String orderBy = param.getOrderBy();
+        String sortRule = param.getSortRule();
+
+        String returnString = "keyword: " + nameKeyword + ", orderBy: " + orderBy + ", sortRule: " + sortRule;
+
+        return ResponseEntity.ok().body(returnString);
+    }
+
+    /**
+     * 不用給每個值，沒給會是 null
+     * 不用照順序
+     * **/
+//    @RequestMapping(method = RequestMethod.GET, value = "/custom")
+    @GetMapping("/custom")
+    public ResponseEntity<String> controllerMethod(@RequestParam Map<String, String> customQuery) {
+
+        String s1 = "customQuery = brand " + customQuery.get("brand") + ", ";
+        String s2 = "customQuery = limit " + customQuery.get("limit") + ", ";
+        String s3 = "customQuery = price " + customQuery.get("price") + ", ";
+        String s4 = "customQuery = other " + customQuery.get("other") + ", ";
+        String s5 = "customQuery = sort " + customQuery.get("sort");
+
+        String returnString = s1 + s2 + s3 + s4 + s5;
+
+        return ResponseEntity.ok().body(returnString);
+
+//        return customQuery.toString();
     }
 
 
