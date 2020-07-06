@@ -1,5 +1,6 @@
 package com.example.restservice;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,50 +16,18 @@ import java.util.Optional;
 @RestController
 public class ProductController {
 
-    private final List<Product> productDB = new ArrayList<>();
+    @Autowired
+    private ProductService productService;
 
-    @PostConstruct
-    private void initDB() {
-        productDB.add(new Product("B0001", "Android Development (Java)", 380));
-        productDB.add(new Product("B0002", "Android Development (Kotlin)", 420));
-        productDB.add(new Product("B0003", "Data Structure (Java)", 250));
-        productDB.add(new Product("B0004", "Finance Management", 450));
-        productDB.add(new Product("B0005", "Human Resource Management", 330));
-    }
-
-
-    @GetMapping("/products/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<Product> getProduct(@PathVariable("id") String id) {
-        Optional<Product> productOp = productDB.stream()
-                .filter(p -> p.getId().equals(id))
-                .findFirst();
-
-        if (!productOp.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Product product = productOp.get();
-        return ResponseEntity.ok().body(product);
+        Product product = productService.getProduct(id);
+        return ResponseEntity.ok(product);
     }
 
-//    @GetMapping("/products/{id}")
-//    public Product getProduct(@PathVariable("id") String id) {
-//        return null;
-//    }
-
-    @PostMapping("/products")
-    public ResponseEntity<Object> createProduct(@RequestBody Product request) {
-        boolean isIdDuplicated = productDB.stream()
-                .anyMatch(p -> p.getId().equals(request.getId()));
-        if (isIdDuplicated) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
-
-        Product product = new Product();
-        product.setId(request.getId());
-        product.setName(request.getName());
-        product.setPrice(request.getPrice());
-        productDB.add(product);
+    @PostMapping
+    public ResponseEntity<Product> createProduct(@RequestBody Product request) {
+        Product product = productService.createProduct(request);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -69,30 +38,35 @@ public class ProductController {
         return ResponseEntity.created(location).body(product);
     }
 
-    @PutMapping("/products/{id}")
-    public Product replaceProduct(@PathVariable("id") String id,
-                                  @RequestBody Product request) {
-        return null;
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> replaceProduct(
+            @PathVariable("id") String id, @RequestBody Product request) {
+        Product product = productService.replaceProduct(id, request);
+        return ResponseEntity.ok(product);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity deleteProduct(@PathVariable("id") String id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**
      * 每個值都要給
      * 而且不能改變順序
+     * 與下方 @RequestParam 接收一個 Map<String, String> 做比較
      * **/
-    @GetMapping("/products")
-    public ResponseEntity<String> getProducts(@ModelAttribute ProductQueryParameter param) {
-        String nameKeyword = param.getKeyword();
-        String orderBy = param.getOrderBy();
-        String sortRule = param.getSortRule();
-
-        String returnString = "keyword: " + nameKeyword + ", orderBy: " + orderBy + ", sortRule: " + sortRule;
-
-        return ResponseEntity.ok().body(returnString);
+    @GetMapping
+    public ResponseEntity<List<Product>> getProducts(@ModelAttribute ProductQueryParameter param) {
+        List<Product> products = productService.getProducts(param);
+        return ResponseEntity.ok(products);
     }
+
 
     /**
      * 不用給每個值，沒給會是 null
      * 不用照順序
+     * 與上方利用 @ModelAttribute 做比較
      * **/
 //    @RequestMapping(method = RequestMethod.GET, value = "/custom")
     @GetMapping("/custom")
@@ -110,14 +84,6 @@ public class ProductController {
 
 //        return customQuery.toString();
     }
-
-
-
-
-
-
-
-
 
 
     /** PLAY GROUND **/
